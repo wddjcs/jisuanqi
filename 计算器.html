@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学计算思路讲解器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", "宋体", Arial, sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        #math-question {
+            flex: 1;
+            min-width: 280px;
+            padding: 15px 20px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 18px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        #math-question:focus {
+            border-color: #3498db;
+        }
+        #calc-btn {
+            padding: 15px 30px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+        #calc-btn:hover {
+            background: #2980b9;
+        }
+        #clear-btn {
+            padding: 15px 20px;
+            background: #ecf0f1;
+            color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+        #clear-btn:hover {
+            background: #d5d8dc;
+        }
+        .result-area {
+            margin-top: 20px;
+        }
+        .result-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        #result-content, #idea-content {
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #result-content {
+            background: #e8f4fd;
+            border: 1px solid #d1e7dd;
+            color: #2c3e50;
+        }
+        #idea-content {
+            background: #f8f9fa;
+            border: 1px solid #e1e8ed;
+            color: #34495e;
+        }
+        .train-tip {
+            margin-top: 40px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #856404;
+            line-height: 1.6;
+        }
+        .train-tip h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 768px) {
+            .input-area {
+                flex-direction: column;
+            }
+            #calc-btn, #clear-btn {
+                width: 100%;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+    <!-- 公式渲染支持（可选，增强数学公式显示） -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>数学计算思路讲解器（可训练）</h1>
+        <div class="input-area">
+            <input type="text" id="math-question" placeholder="请输入数学计算题，例如：125+36*8、(1/2)+(3/4)、2x+5=17">
+            <button id="calc-btn">计算+讲解思路</button>
+            <button id="clear-btn">清空</button>
+        </div>
+
+        <div class="result-area">
+            <div class="result-title">计算结果：</div>
+            <div id="result-content">请输入题目并点击计算</div>
+
+            <div class="result-title">计算思路（分步拆解）：</div>
+            <div id="idea-content">思路将在这里展示，包含每一步的计算原理和操作</div>
+        </div>
+
+        <div class="train-tip">
+            <h3>📚 训练/自定义思路方法（修改代码中「思路模板库」即可）：</h3>
+            1. 打开本HTML文件的代码编辑器，找到 <code>ideaTemplate</code> 对象；<br>
+            2. 按「题型关键词: 思路模板」的格式增删改，支持小学/初中/高中不同学段；<br>
+            3. 模板中用 <code>{step1}</code>、<code>{result}</code> 等占位符，会自动替换为实际计算内容；<br>
+            4. 保存修改后，刷新页面即可生效，无需额外配置。
+        </div>
+    </div>
+
+    <script>
+        // ========== 核心：思路模板库（可训练/自定义，重点修改这里！） ==========
+        // 按「题型关键词」匹配，支持加减乘除、分数、小数、一元一次方程、四则混合运算
+        const ideaTemplate = {
+            // 四则混合运算（含括号、乘除优先）
+            "四则混合": "1. 依据「四则混合运算规则」：先算乘除，后算加减，有括号先算括号内；\n2. 分步计算：{stepDetail}；\n3. 最终合并结果得到答案：{result}。",
+            // 加法（含进位/小数/分数）
+            "加法": "1. 依据「加法计算规则」：相同数位对齐（小数对齐小数点，分数通分）；\n2. 计算过程：{stepDetail}；\n3. 化简结果（如需）：{simplify}，最终答案：{result}。",
+            // 减法（含借位/小数/分数）
+            "减法": "1. 依据「减法计算规则」：相同数位对齐（小数对齐小数点，分数通分）；\n2. 计算过程：{stepDetail}；\n3. 化简结果（如需）：{simplify}，最终答案：{result}。",
+            // 乘法（含进位/小数/分数/整十整百）
+            "乘法": "1. 依据「乘法计算规则」：整数从低位乘起，小数先按整数算再点小数点，分数分子乘分子、分母乘分母；\n2. 计算过程：{stepDetail}；\n3. 化简结果（约分/去零）：{simplify}，最终答案：{result}。",
+            // 除法（含整除/小数/分数/有余数）
+            "除法": "1. 依据「除法计算规则」：整数从高位除起，分数除以一个数等于乘它的倒数，小数化整后计算；\n2. 计算过程：{stepDetail}；\n3. 化简结果（约分/保留小数）：{simplify}，最终答案：{result}。",
+            // 一元一次方程
+            "一元一次方程": "1. 依据「等式的基本性质」：等式两边同时加/减/乘/除同一个非零数，等式不变；\n2. 移项：把含未知数的项移到左边，常数项移到右边，移项变号：{step1}；\n3. 合并同类项：{step2}；\n4. 系数化为1：{step3}；\n5. 最终解为：x={result}。",
+            // 分数加减乘除
+            "分数运算": "1. 依据「分数计算规则」：加减先通分（找最小公倍数），乘除直接约分计算；\n2. 通分/约分过程：{stepDetail}；\n3. 计算结果：{tempResult}；\n4. 化为最简分数：{simplify}，最终答案：{result}。"
+        };
+
+        // ========== 工具函数：判断题型/拆解步骤/格式化公式 ==========
+        // 格式化数字（分数/平方/根号）
+        function formatNum(num) {
+            if (num.toString().includes("/")) {
+                const [a, b] = num.toString().split("/");
+                return `\\(\\frac{${a}}{${b}}\\)`; // 适配MathJax公式渲染
+            }
+            if (num.toString().includes("²")) return `\\(${num.replace("²", "^2")}\\)`;
+            if (num.toString().includes("√")) return `\\(${num.replace("√", "\\sqrt{}")}\\)`;
+            return num;
+        }
+
+        // 约分（分数化简）
+        function reduceFraction(numerator, denominator) {
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const commonDivisor = gcd(numerator, denominator);
+            return [numerator / commonDivisor, denominator / commonDivisor];
+        }
+
+        // 判断题型
+        function judgeQuestionType(question) {
+            if (question.includes("x=") || question.includes("X=") || question.match(/\d+x|x\d+/)) return "一元一次方程";
+            if (question.includes("/") && !question.includes("÷")) return "分数运算";
+            if (question.match(/\+|\-|\×|\*|÷/g)?.length >= 2 || question.includes("(") || question.includes(")")) return "四则混合";
+            if (question.includes("+")) return "加法";
+            if (question.includes("-")) return "减法";
+            if (question.includes("×") || question.includes("*") || question.includes("×")) return "乘法";
+            if (question.includes("÷")) return "除法";
+            return "四则混合";
+        }
+
+        // ========== 核心计算函数：分步拆解+思路生成 ==========
+        function calculateMath(question) {
+            question = question.replace(/×/g, "*").replace(/÷/g, "/").replace(/x/g, "x").trim();
+            const type = judgeQuestionType(question);
+            let result = "";
+            let idea = "";
+            let stepDetail = "";
+            let simplify = "无需化简";
+            let tempResult = "";
+
+            try {
+                // 1. 一元一次方程处理（如2x+5=17）
+                if (type === "一元一次方程") {
+                    const [left, right] = question.split("=").map(item => item.trim());
+                    let step1 = `将${left}中的常数项移到右边，得到：${left.replace(/\+\d+|\-\d+/, "")}=${eval(right + (left.match(/\+\d+/) ? "-" + left.match(/\+\d+/)[0].replace("+", "") : "+" + left.match(/\-\d+/)[0].replace("-", "")))}`;
+                    let midResult = eval(right + (left.match(/\+\d+/) ? "-" + left.match(/\+\d+/)[0].replace("+", "") : "+" + left.match(/\-\d+/)[0].replace("-", "")));
+                    let varPart = left.replace(/\+\d+|\-\d+/, "").trim();
+                    let coeff = varPart.replace("x", "") || 1;
+                    let step2 = `合并同类项后，方程简化为：${coeff}x=${midResult}`;
+                    let step3 = `等式两边同时除以${coeff}，得到x=${midResult / coeff}`;
+                    result = midResult / coeff;
+                    idea = ideaTemplate[type].replace("{step1}", step1).replace("{step2}", step2).replace("{step3}", step3).replace("{result}", result);
+                }
+                // 2. 分数运算处理（如1/2+3/4）
+                else if (type === "分数运算") {
+                    const parts = question.match(/(\d+\/\d+)|[\+\-\*\/]/g);
+                    let num1 = parts[0].split("/").map(Number);
+                    let op = parts[1];
+                    let num2 = parts[2].split("/").map(Number);
+                    let [n1, d1] = num1;
+                    let [n2, d2] = num2;
+                    let newN, newD;
+
+                    if (op === "+" || op === "-") {
+                        const lcm = (a, b) => (a * b) / gcd(a, b);
+                        const commonD = lcm(d1, d2);
+                        stepDetail = `通分，将分母统一为${commonD}，${n1}/${d1}=${n1*(commonD/d1)}/${commonD}，${n2}/${d2}=${n2*(commonD/d2)}/${commonD}，再进行${op}法`;
+                        newN = op === "+" ? n1*(commonD/d1) + n2*(commonD/d2) : n1*(commonD/d1) - n2*(commonD/d2);
+                        newD = commonD;
+                    } else {
+                        stepDetail = `直接按${op==="*"?"乘法":"除法"}规则计算，${op==="*"?"分子乘分子、分母乘分母":"除以一个分数等于乘它的倒数，即${n1}/${d1}${op}${d2}/${n2}"}`;
+                        newN = op === "*" ? n1*n2 : n1*d2;
+                        newD = op === "*" ? d1*d2 : d1*n2;
+                    }
+
+                    tempResult = `${newN}/${newD}`;
+                    const [rn, rd] = reduceFraction(newN, newD);
+                    if (rn !== newN || rd !== newD) simplify = `将${newN}/${newD}约分，分子分母同除以${gcd(newN, newD)}，得到${rn}/${rd}`;
+                    result = rn / rd;
+                    idea = ideaTemplate[type].replace("{stepDetail}", stepDetail).replace("{tempResult}", tempResult).replace("{simplify}", simplify).replace("{result}", `${rn}/${rd}（或${result}）`);
+                }
+                // 3. 四则混合/加减乘除通用处理
+                else {
+                    // 分步拆解（简单版，可扩展更细的步骤）
+                    stepDetail = `先计算乘除部分：${question.match(/\d+\*\/\d+|\d+\/\d+/g)?.join("") || "无乘除，直接计算加减"}，得到中间结果${eval(question.match(/\d+\*\/\d+|\d+\/\d+/g)?.join("") || question)}，再计算加减部分，最终合并`;
+                    result = eval(question);
+                    // 化简判断（如小数末尾去零、整数化分数）
+                    if (Number.isInteger(result) && question.includes(".")) simplify = "将小数结果化为整数：" + result;
+                    idea = ideaTemplate[type].replace("{stepDetail}", stepDetail).replace("{simplify}", simplify).replace("{result}", result);
+                }
+
+                // 格式化结果（适配公式显示）
+                result = formatNum(result);
+                return { result: result, idea: idea, success: true };
+            } catch (e) {
+                return { result: "输入题目格式错误！", idea: "请检查题目是否符合数学规范，例如：12+36*8、(1/2)+(3/4)、2x+5=17", success: false };
+            }
+        }
+
+        // ========== 页面交互事件 ==========
+        const questionInput = document.getElementById("math-question");
+        const calcBtn = document.getElementById("calc-btn");
+        const clearBtn = document.getElementById("clear-btn");
+        const resultContent = document.getElementById("result-content");
+        const ideaContent = document.getElementById("idea-content");
+
+        // 计算按钮点击
+        calcBtn.addEventListener("click", () => {
+            const question = questionInput.value;
+            if (!question) {
+                resultContent.innerHTML = "请输入有效的数学计算题！";
+                ideaContent.innerHTML = "例如：125+36*8、(1/2)+(3/4)、2x+5=17";
+                return;
+            }
+            const res = calculateMath(question);
+            resultContent.innerHTML = res.result;
+            ideaContent.innerHTML = res.idea;
+            // 重新渲染公式（MathJax）
+            if (window.MathJax) MathJax.typeset();
+        });
+
+        // 清空按钮点击
+        clearBtn.addEventListener("click", () => {
+            questionInput.value = "";
+            resultContent.innerHTML = "请输入题目并点击计算";
+            ideaContent.innerHTML = "思路将在这里展示，包含每一步的计算原理和操作";
+            questionInput.focus();
+        });
+
+        // 回车触发计算
+        questionInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") calcBtn.click();
+        });
+
+        // 最大公约数（工具函数）
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+    </script>
+<div style="position:fixed;right:15px;bottom:15px;font-size:13px;color:#666;">
+    此AI由豆包AI生成
+</div>
+</body>
+</html>

@@ -5,4 +5,4 @@ ___
 ~~它存在很久了~~
 *他是新的*
 `https://wddjcs.github.io/jisuanqi`
-[] (https://wddjcs.github.io/jisuanqi)
+[link](https://wddjcs.github.io/jisuanqi)
